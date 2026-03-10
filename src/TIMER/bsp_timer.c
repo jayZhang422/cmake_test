@@ -25,7 +25,7 @@ static const bsp_timer_static_cfg_t g_timer_hw_map[BSP_TIMER_NUM] =
     /* 这里的宏定义需要在 bsp_config.h 中根据 FSP 配置生成 */
     [BSP_TIMER_OVERFLOW] = { .p_hal_instance = GPT_OVERFLOW_INSTANCE },
 
-    [BSP_TIMER_LVGL] = { .p_hal_instance = GPT_LVGL_INSTANCE },
+
 };
 
 static bsp_timer_runtime_ctrl_t g_timer_run_ctrl[BSP_TIMER_NUM];

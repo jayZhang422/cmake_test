@@ -65,6 +65,7 @@
   </raClockConfiguration>
   <raPinConfiguration>
     <pincfg active="true" name="" symbol="">
+      <configSetting altId="adc0.an04.p004" configurationId="adc0.an04" isUsedByDriver="true" peripheral="ADC0"/>
       <configSetting altId="adc0.an05.p005" configurationId="adc0.an05" isUsedByDriver="true" peripheral="ADC0"/>
       <configSetting altId="dac0.da.p014" configurationId="dac0.da" isUsedByDriver="true" peripheral="DAC0"/>
       <configSetting altId="debug0.swclk.p300" configurationId="debug0.swclk" isUsedByDriver="true" peripheral="DEBUG0"/>
@@ -74,6 +75,7 @@
       <configSetting altId="irq0.irq06.p000" configurationId="irq0.irq06" isUsedByDriver="true" peripheral="ICU0"/>
       <configSetting altId="p000.gpio_irq.gpio_irq_enabled" configurationId="p000.gpio_irq"/>
       <configSetting altId="p000.gpio_mode.gpio_mode_irq" configurationId="p000.gpio_mode"/>
+      <configSetting altId="p004.gpio_mode.gpio_mode_an" configurationId="p004.gpio_mode"/>
       <configSetting altId="p005.gpio_mode.gpio_mode_an" configurationId="p005.gpio_mode"/>
       <configSetting altId="p014.gpio_mode.gpio_mode_an" configurationId="p014.gpio_mode"/>
       <configSetting altId="p100.gpio_mode.gpio_mode_peripheral" configurationId="p100.gpio_mode"/>
@@ -86,6 +88,8 @@
       <configSetting altId="p105.output.high" configurationId="p105"/>
       <configSetting altId="p105.gpio_mode.gpio_mode_out.high" configurationId="p105.gpio_mode"/>
       <configSetting altId="p108.gpio_mode.gpio_mode_peripheral" configurationId="p108.gpio_mode"/>
+      <configSetting altId="p202.gpio_mode.gpio_mode_peripheral" configurationId="p202.gpio_mode"/>
+      <configSetting altId="p203.gpio_mode.gpio_mode_peripheral" configurationId="p203.gpio_mode"/>
       <configSetting altId="p206.gpio_mode.gpio_mode_peripheral" configurationId="p206.gpio_mode"/>
       <configSetting altId="p206.gpio_otype.gpio_otype_n_ch_od" configurationId="p206.gpio_otype"/>
       <configSetting altId="p207.gpio_mode.gpio_mode_peripheral" configurationId="p207.gpio_mode"/>
@@ -121,6 +125,8 @@
       <configSetting altId="sci4.sda.p207" configurationId="sci4.sda" isUsedByDriver="true" peripheral="SCI4"/>
       <configSetting altId="sci7.rxd.p614" configurationId="sci7.rxd" isUsedByDriver="true" peripheral="SCI7"/>
       <configSetting altId="sci7.txd.p613" configurationId="sci7.txd" isUsedByDriver="true" peripheral="SCI7"/>
+      <configSetting altId="sci9.rxd.p202" configurationId="sci9.rxd" isUsedByDriver="true" peripheral="SCI9"/>
+      <configSetting altId="sci9.txd.p203" configurationId="sci9.txd" isUsedByDriver="true" peripheral="SCI9"/>
       <configSetting altId="spi1.miso.p100" configurationId="spi1.miso" isUsedByDriver="true" peripheral="SPI1"/>
       <configSetting altId="spi1.mosi.p101" configurationId="spi1.mosi" isUsedByDriver="true" peripheral="SPI1"/>
       <configSetting altId="spi1.rspck.p102" configurationId="spi1.rspck" isUsedByDriver="true" peripheral="SPI1"/>

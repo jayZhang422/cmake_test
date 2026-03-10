@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include "bsp_api.h"
 #include "common_data.h"
-#include "r_gpt.h"
-#include "r_timer_api.h"
 #include "r_dtc.h"
 #include "r_transfer_api.h"
+#include "r_sci_uart.h"
+            #include "r_uart_api.h"
 #include "r_spi.h"
 #include "r_dmac.h"
 #include "r_transfer_api.h"
@@ -17,25 +17,38 @@
 #include "r_adc_api.h"
 #include "r_rtc.h"
 #include "r_rtc_api.h"
+#include "r_gpt.h"
+#include "r_timer_api.h"
 #include "r_iic_master.h"
 #include "r_i2c_master_api.h"
 #include "r_qspi.h"
             #include "r_spi_flash_api.h"
 #include "r_sci_i2c.h"
 #include "r_i2c_master_api.h"
-#include "r_sci_uart.h"
-            #include "r_uart_api.h"
 FSP_HEADER
-/** Timer on GPT Instance. */
-extern const timer_instance_t g_timer_lvgl;
+/* Transfer on DTC Instance. */
+extern const transfer_instance_t g_transfer4;
 
-/** Access the GPT instance using these structures when calling API functions directly (::p_api is not used). */
-extern gpt_instance_ctrl_t g_timer_lvgl_ctrl;
-extern const timer_cfg_t g_timer_lvgl_cfg;
+/** Access the DTC instance using these structures when calling API functions directly (::p_api is not used). */
+extern dtc_instance_ctrl_t g_transfer4_ctrl;
+extern const transfer_cfg_t g_transfer4_cfg;
+/* Transfer on DTC Instance. */
+extern const transfer_instance_t g_transfer3;
 
-#ifndef gpt_common_isr
-void gpt_common_isr(timer_callback_args_t * p_args);
-#endif
+/** Access the DTC instance using these structures when calling API functions directly (::p_api is not used). */
+extern dtc_instance_ctrl_t g_transfer3_ctrl;
+extern const transfer_cfg_t g_transfer3_cfg;
+/** UART on SCI Instance. */
+            extern const uart_instance_t      g_uart_screen;
+
+            /** Access the UART instance using these structures when calling API functions directly (::p_api is not used). */
+            extern sci_uart_instance_ctrl_t     g_uart_screen_ctrl;
+            extern const uart_cfg_t g_uart_screen_cfg;
+            extern const sci_uart_extended_cfg_t g_uart_screen_cfg_extend;
+
+            #ifndef usart_common_callback
+            void usart_common_callback(uart_callback_args_t * p_args);
+            #endif
 /* Transfer on DTC Instance. */
 extern const transfer_instance_t g_transfer2;
 

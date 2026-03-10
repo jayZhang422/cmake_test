@@ -38,6 +38,7 @@ typedef struct
 static const bsp_uart_static_cfg_t g_uart_cfg_map[COM_NUM_MAX] = 
 {
     [COM_DEBUG]     = { .p_hal_instance = DEBUGDEV_INSTANCE, .mutex_name = "UART0_M" },
+    [COM_TJC]       = {.p_hal_instance = TJC_INSTANCE , .mutex_name = "UART_SCERRN"} ,
 };
 
 static bsp_uart_runtime_ctrl_t g_uart_run_ctrl[COM_NUM_MAX];

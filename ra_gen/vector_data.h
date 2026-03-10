@@ -6,7 +6,7 @@
         #endif
                 /* Number of interrupts allocated */
         #ifndef VECTOR_DATA_IRQ_COUNT
-        #define VECTOR_DATA_IRQ_COUNT    (22)
+        #define VECTOR_DATA_IRQ_COUNT    (25)
         #endif
         /* ISR prototypes */
         void sci_uart_rxi_isr(void);
@@ -72,10 +72,16 @@
         #define SPI1_TEI_IRQn          ((IRQn_Type) 19) /* SPI1 TEI (Transmission complete event) */
         #define VECTOR_NUMBER_SPI1_ERI ((IRQn_Type) 20) /* SPI1 ERI (Error) */
         #define SPI1_ERI_IRQn          ((IRQn_Type) 20) /* SPI1 ERI (Error) */
-        #define VECTOR_NUMBER_GPT0_COUNTER_OVERFLOW ((IRQn_Type) 21) /* GPT0 COUNTER OVERFLOW (Overflow) */
-        #define GPT0_COUNTER_OVERFLOW_IRQn          ((IRQn_Type) 21) /* GPT0 COUNTER OVERFLOW (Overflow) */
+        #define VECTOR_NUMBER_SCI9_RXI ((IRQn_Type) 21) /* SCI9 RXI (Receive data full) */
+        #define SCI9_RXI_IRQn          ((IRQn_Type) 21) /* SCI9 RXI (Receive data full) */
+        #define VECTOR_NUMBER_SCI9_TXI ((IRQn_Type) 22) /* SCI9 TXI (Transmit data empty) */
+        #define SCI9_TXI_IRQn          ((IRQn_Type) 22) /* SCI9 TXI (Transmit data empty) */
+        #define VECTOR_NUMBER_SCI9_TEI ((IRQn_Type) 23) /* SCI9 TEI (Transmit end) */
+        #define SCI9_TEI_IRQn          ((IRQn_Type) 23) /* SCI9 TEI (Transmit end) */
+        #define VECTOR_NUMBER_SCI9_ERI ((IRQn_Type) 24) /* SCI9 ERI (Receive error) */
+        #define SCI9_ERI_IRQn          ((IRQn_Type) 24) /* SCI9 ERI (Receive error) */
         /* The number of entries required for the ICU vector table. */
-        #define BSP_ICU_VECTOR_NUM_ENTRIES (22)
+        #define BSP_ICU_VECTOR_NUM_ENTRIES (25)
 
         #ifdef __cplusplus
         }

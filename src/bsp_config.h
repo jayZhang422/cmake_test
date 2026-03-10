@@ -17,5 +17,5 @@
 #define ADC0_INSTANCE (&g_adc5)
 #define DACWAVE_INSTANCE (&g_dac_output)
 #define DMAC_DAC_INSTANCE (&g_dma_dac)
-#define GPT_LVGL_INSTANCE (&g_timer_lvgl)
+#define TJC_INSTANCE (&g_uart_screen)
 #endif // _BSP_CONFIG_H

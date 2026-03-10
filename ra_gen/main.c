@@ -2,10 +2,8 @@
 #include "bsp_api.h"
                 #include "tx_api.h"
 
-                extern void Lvgl_Thread_create(void);
-extern void App_Thread_create(void);
-extern void Idle_Thread_create(void);
-extern void Monitor_Thread_create(void);
+                extern void App_Thread_create(void);
+extern void Screen_Thread_create(void);
 
                 uint32_t     g_fsp_common_thread_count;
                 bool         g_fsp_common_initialized;
@@ -58,10 +56,8 @@ extern void Monitor_Thread_create(void);
                         tx_startup_err_callback(&g_fsp_common_initialized_semaphore, 0);
                     }
 
-                    Lvgl_Thread_create();
-App_Thread_create();
-Idle_Thread_create();
-Monitor_Thread_create();
+                    App_Thread_create();
+Screen_Thread_create();
 
 					#ifdef TX_USER_ENABLE_TRACE
 					TX_USER_ENABLE_TRACE;

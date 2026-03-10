@@ -12,7 +12,7 @@ extern "C" {
 typedef enum
 {
     COM_DEBUG = 0,    
-    /* COM_WIFI, */
+    COM_TJC,
     /* COM_BLUETOOTH, */
 
     COM_NUM_MAX       

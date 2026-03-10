@@ -66,22 +66,12 @@ file(GLOB_RECURSE USER_SOURCES
     "Application/*.cpp"
     "Application/*.c"
     "Driver/*.cpp"
-    "user_lvgl/src/*.c"
-    "user_lvgl/user_example/*.c"
-    "user_lvgl/user_example/*.cpp"
-    "user_lvgl/user_ui/custom/*.c"
-    "user_lvgl/user_ui/generated/*.c"
+   
    
 ) 
 
 
-list(FILTER USER_SOURCES EXCLUDE REGEX "user_lvgl/src/debugging/test/.*")
 
-
-list(FILTER USER_SOURCES EXCLUDE REGEX "user_lvgl/src/drivers/.*")
-
-
-list(FILTER USER_SOURCES EXCLUDE REGEX "user_lvgl/src/libs/gltf/.*")
 
 target_include_directories(${PROJECT_NAME}.elf PRIVATE 
     "src"
@@ -102,13 +92,7 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
     "ra/arm/CMSIS-DSP/Include"
     "Algorithm"
     "src/DAC"
-    "user_lvgl"
-    "user_lvgl/src"
-    "user_lvgl/user_example"
-    "user_lvgl/user_ui/custom"
-    "user_lvgl/user_ui/generated"
-    "user_lvgl/user_ui/generated/guider_fonts"
-    "user_lvgl/user_ui/generated/guider_customer_fonts"
+    
 
    
     
