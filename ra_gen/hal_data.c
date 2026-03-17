@@ -401,16 +401,16 @@ transfer_info_t g_dma_dac_info =
     .transfer_settings_word_b.chain_mode     = TRANSFER_CHAIN_MODE_DISABLED,
     .transfer_settings_word_b.src_addr_mode  = TRANSFER_ADDR_MODE_INCREMENTED,
     .transfer_settings_word_b.size           = TRANSFER_SIZE_2_BYTE,
-    .transfer_settings_word_b.mode           = TRANSFER_MODE_NORMAL,
+    .transfer_settings_word_b.mode           = TRANSFER_MODE_REPEAT,
     .p_dest                                  = (void *) NULL,
     .p_src                                   = (void const *) NULL,
     .num_blocks                              = 0,
-    .length                                  = 1,
+    .length                                  = 200,
 };
 const dmac_extended_cfg_t g_dma_dac_extend =
 {
     .offset              = 1,
-    .src_buffer_size     = 1,
+    .src_buffer_size     = 200,
 #if defined(VECTOR_NUMBER_DMAC2_INT)
     .irq                 = VECTOR_NUMBER_DMAC2_INT,
 #else
@@ -739,7 +739,7 @@ const timer_cfg_t g_timer_overflow_cfg =
     .mode                = TIMER_MODE_PERIODIC,
     /* Actual period: 0.00001 seconds. Actual duty: 50%. */ .period_counts = (uint32_t) 0x3e8, .duty_cycle_counts = 0x1f4, .source_div = (timer_source_div_t)0,
     .channel             = 6,
-    .p_callback          = gpt_common_isr,
+    .p_callback          = NULL,
     /** If NULL then do not add & */
 #if defined(NULL)
     .p_context           = NULL,
@@ -747,7 +747,7 @@ const timer_cfg_t g_timer_overflow_cfg =
     .p_context           = (void *) &NULL,
 #endif
     .p_extend            = &g_timer_overflow_extend,
-    .cycle_end_ipl       = (10),
+    .cycle_end_ipl       = (BSP_IRQ_DISABLED),
 #if defined(VECTOR_NUMBER_GPT6_COUNTER_OVERFLOW)
     .cycle_end_irq       = VECTOR_NUMBER_GPT6_COUNTER_OVERFLOW,
 #else

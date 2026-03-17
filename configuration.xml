@@ -452,8 +452,8 @@
       <property id="module.driver.timer.gtiocb_filter" value="module.driver.timer.gtioc_filter.gtioc_filter_none"/>
       <property id="module.driver.timer.gtioca_polarity" value="module.driver.timer.gtioc_polarity.normal"/>
       <property id="module.driver.timer.gtiocb_polarity" value="module.driver.timer.gtioc_polarity.normal"/>
-      <property id="module.driver.timer.p_callback" value="gpt_common_isr"/>
-      <property id="module.driver.timer.ipl" value="board.icu.common.irq.priority10"/>
+      <property id="module.driver.timer.p_callback" value="NULL"/>
+      <property id="module.driver.timer.ipl" value="_disabled"/>
       <property id="module.driver.timer.capture_a_ipl" value="_disabled"/>
       <property id="module.driver.timer.capture_b_ipl" value="_disabled"/>
       <property id="module.driver.timer.compare_match_c_ipl" value="_disabled"/>
@@ -560,19 +560,19 @@
     <module id="module.driver.transfer_on_dmac.391252159">
       <property id="module.driver.transfer.name" value="g_dma_dac"/>
       <property id="module.driver.transfer.channel" value="2"/>
-      <property id="module.driver.transfer.mode" value="module.driver.transfer.mode.mode_normal"/>
+      <property id="module.driver.transfer.mode" value="module.driver.transfer.mode.mode_repeat"/>
       <property id="module.driver.transfer.size" value="module.driver.transfer.size.size_2_byte"/>
       <property id="module.driver.transfer.dest_addr_mode" value="module.driver.transfer.dest_addr_mode.addr_mode_fixed"/>
       <property id="module.driver.transfer.src_addr_mode" value="module.driver.transfer.src_addr_mode.addr_mode_incremented"/>
       <property id="module.driver.transfer.repeat_area" value="module.driver.transfer.repeat_area.repeat_area_source"/>
-      <property id="module.driver.transfer.length" value="1"/>
+      <property id="module.driver.transfer.length" value="200"/>
       <property id="module.driver.transfer.num_blocks" value="0"/>
       <property id="module.driver.transfer.activation_event" value="_signal.event.gpt6.counter.overflow"/>
       <property id="module.driver.transfer.p_callback" value="dmac_common_isr"/>
       <property id="module.driver.transfer.ipl" value="board.icu.common.irq.priority12"/>
       <property id="module.driver.transfer.interrupt" value="module.driver.transfer.interrupt.interrupt_end"/>
       <property id="module.driver.transfer.offset" value="1"/>
-      <property id="module.driver.transfer.src.buffer" value="1"/>
+      <property id="module.driver.transfer.src.buffer" value="200"/>
     </module>
     <module id="module.driver.transfer_on_dtc.1629360723">
       <property id="module.driver.transfer.name" value="g_transfer0"/>

@@ -85,7 +85,6 @@
             <slot name="IRQ21.CM33" secure="true"/>
             <slot name="IRQ22.CM33" secure="true"/>
             <slot name="IRQ23.CM33" secure="true"/>
-            <slot name="IRQ24.CM33" secure="true"/>
         </peripheral>
     </partition>
 </azone>

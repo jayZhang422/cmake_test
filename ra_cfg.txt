@@ -586,8 +586,8 @@ FSP Configuration
       Input: Noise Filter B Sampling Clock Select: No Filter
       Pin Polarity: GTIOCnA Polarity: Normal
       Pin Polarity: GTIOCnB Polarity: Normal
-      Interrupts: Callback: gpt_common_isr
-      Interrupts: Overflow/Crest Interrupt Priority: Priority 10
+      Interrupts: Callback: NULL
+      Interrupts: Overflow/Crest Interrupt Priority: Disabled
       Interrupts: Capture/Compare match A Interrupt Priority: Disabled
       Interrupts: Capture/Compare match B Interrupt Priority: Disabled
       Interrupts: Compare Match C Interrupt Priority: Disabled
@@ -694,19 +694,19 @@ FSP Configuration
     Instance "g_dma_dac Transfer (r_dmac) GPT6 COUNTER OVERFLOW (Overflow)"
       Name: g_dma_dac
       Channel: 2
-      Mode: Normal
+      Mode: Repeat
       Transfer Size: 2 Bytes
       Destination Address Mode: Fixed
       Source Address Mode: Incremented
       Repeat Area (Unused in Normal Mode): Source
-      Number of Transfers: 1
+      Number of Transfers: 200
       Number of Blocks (Valid only in Repeat,Block or Repeat-Block Mode): 0
       Activation Source: GPT6 COUNTER OVERFLOW (Overflow)
       Callback: dmac_common_isr
       Transfer End Interrupt Priority: Priority 12
       Interrupt Frequency: Interrupt after all transfers have completed
       Offset value (Valid only when address mode is Offset addition): 1
-      Source Buffer Size: 1
+      Source Buffer Size: 200
       
     Instance "g_spi0 SPI (r_spi)"
       Name: g_spi0

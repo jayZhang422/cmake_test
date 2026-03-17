@@ -61,7 +61,7 @@ static void decode_packet(const uint8_t * p_packet)
     }
 }
 
-static float absf(float value)
+static float absf(float value)             
 {
     return (value < 0.0f) ? -value : value;
 }

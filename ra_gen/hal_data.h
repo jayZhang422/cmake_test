@@ -144,8 +144,8 @@ extern const timer_instance_t g_timer_overflow;
 extern gpt_instance_ctrl_t g_timer_overflow_ctrl;
 extern const timer_cfg_t g_timer_overflow_cfg;
 
-#ifndef gpt_common_isr
-void gpt_common_isr(timer_callback_args_t * p_args);
+#ifndef NULL
+void NULL(timer_callback_args_t * p_args);
 #endif
 /* I2C Master on IIC Instance. */
 extern const i2c_master_instance_t g_i2c_touch;
