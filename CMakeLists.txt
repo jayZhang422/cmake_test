@@ -1,14 +1,9 @@
-# ==============================================================================
-# 1. 核心配置：编译器路径强制指定 (解决 Windows 空格和 Clangd 问题)
-# ==============================================================================
 cmake_minimum_required(VERSION 3.25)
 
-# ⚠️ 注意：这里直接锁死 D 盘无空格路径，防止 CMake 自动去 C 盘找带空格的路径
-# 如果以后移动了编译器，只需改这两行
-set(CMAKE_C_COMPILER "D:/armGCC/bin/arm-none-eabi-gcc.exe")
-set(CMAKE_CXX_COMPILER "D:/armGCC/bin/arm-none-eabi-g++.exe")
-set(CMAKE_ASM_COMPILER "D:/armGCC/bin/arm-none-eabi-gcc.exe")
 
+set(CMAKE_C_COMPILER "arm-none-eabi-gcc")
+set(CMAKE_CXX_COMPILER "arm-none-eabi-g++")
+set(CMAKE_ASM_COMPILER "arm-none-eabi-gcc")
 # ==============================================================================
 # 2. 系统设置 (RASC 标准配置)
 # ==============================================================================
@@ -170,3 +165,17 @@ target_compile_definitions(${TARGET_NAME} PRIVATE
     __DSP_PRESENT=1             # Cortex-M33 DSP 指令集
     ARM_MATH_CM33               # ARM 数学库需要
 )
+
+# ==============================================================================
+# ⚡ 独立烧录目标 (解耦 VS Code，跨平台通用)
+# ==============================================================================
+# 使用 $<TARGET_FILE:${TARGET_NAME}> 可以自动获取 .elf 文件的绝对路径
+add_custom_target(flash
+    COMMAND pyocd flash -t r7fa6m5bh $<TARGET_FILE:${TARGET_NAME}>
+    DEPENDS ${TARGET_NAME}
+    COMMENT "🚀 [一键烧录] 正在调用 pyOCD 将固件下载至 RA6M5..."
+)
+# 强制编译器输出带颜色的警告和错误，防止在 Ninja 构建中颜色丢失
+add_compile_options(-fdiagnostics-color=always)
+
+message(STATUS "🟢 [编译器已就位] C: ${CMAKE_C_COMPILER}")

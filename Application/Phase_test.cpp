@@ -63,7 +63,7 @@ void Run_phase1_test(void)
     
 
 }
-
+    
 static void DAC_Waveform(void)
 {
     // 1. ���� sin_voltage �������ɱ�׼����??(-1.0 ~ 1.0)
