@@ -1,0 +1,75 @@
+Diagnostics:
+
+  UnusedIncludes: None
+
+
+
+CompileFlags:
+
+  Remove:
+
+    - -fno-rtti
+
+    - -fno-exceptions
+
+    - -mthumb-interwork
+
+    - -fno-use-cxa-atexit
+
+    - -fno-threadsafe-statics
+
+    - -Wno-register
+
+    - -Wno-aggregate-return
+
+
+
+  Add:
+
+    - --target=arm-none-eabi
+
+    - -mcpu=cortex-m33
+
+    - -mfloat-abi=hard
+
+    - -mfpu=fpv5-sp-d16
+
+    - -D__RA6M5__
+
+    - -D__DCACHE_PRESENT=1
+
+    - -D__ICACHE_PRESENT=1
+
+    - -D__FPU_PRESENT=1
+
+    - -D__DSP_PRESENT=1
+
+    - -DARM_MATH_CM33
+
+
+
+---
+
+If:
+
+  PathMatch: .*\.(cpp|cc|cxx|hpp|hh|hxx)$
+
+CompileFlags:
+
+  Add:
+
+    - -std=c++17
+
+
+
+---
+
+If:
+
+  PathMatch: .*\.c$
+
+CompileFlags:
+
+  Add:
+
+    - -std=c11

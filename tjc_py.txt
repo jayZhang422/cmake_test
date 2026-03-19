@@ -1,0 +1,295 @@
+import time
+import math
+import serial
+import serial.tools.list_ports
+import threading
+
+# -------------------------------
+# 串口检测与初始化
+ports = list(serial.tools.list_ports.comports())
+if not ports:
+    print("没有检测到串口，请检查连接！")
+    exit()
+
+COM_PORT = ports[0].device
+BAUDRATE = 9600
+TIMEOUT = 0.05
+
+print(f"使用串口: {COM_PORT}, 波特率: {BAUDRATE}")
+ser = serial.Serial(COM_PORT, BAUDRATE, timeout=TIMEOUT)
+
+# 串口写入锁（保护单条指令的完整发送）
+serial_lock = threading.Lock()
+
+# 波形操作锁
+wave_operation_lock = threading.Lock()
+
+# -------------------------------
+# 迪文屏按键帧解析常量
+KEY_FRAME_LEN = 7
+WAIT_TXT_TIMEOUT = 0.2
+
+frame_buffer = []
+data_buffer = bytearray()
+waiting_frame = None
+last_frame_time = None
+
+# -------------------------------
+# 淘晶驰波形控件配置
+WAVE_COMPONENT = "s0.id"
+WAVE_CHANNEL = 0
+WAVE_POINTS = 512
+
+# -------------------------------
+# 串口发送命令函数
+def send_command(cmd: str):
+    with serial_lock:
+        ser.write(cmd.encode('ascii') + b'\xff\xff\xff')
+
+def HMI_Wave(val: int):
+    cmd = f'add {WAVE_COMPONENT},{WAVE_CHANNEL},{val}'
+    send_command(cmd)
+
+def HMI_Wave_Fast(count: int, show_data):
+    header = f'addt {WAVE_COMPONENT},{WAVE_CHANNEL},{count}'
+    with serial_lock:
+        ser.write(header.encode('ascii') + b'\xff\xff\xff')
+        time.sleep(0.1)
+        ser.write(bytes(show_data))
+        ser.write(b'\xff\xff\xff')
+
+def HMI_Wave_Clear():
+    cmd = f'cle {WAVE_COMPONENT},{WAVE_CHANNEL}'
+    send_command(cmd)
+
+def HMI_SetText(component: str, text: str):
+    cmd = f'{component}="{text}"'
+    send_command(cmd)
+
+# -------------------------------
+# 波形生成
+def generate_sin_wave(points=WAVE_POINTS):
+    data = []
+    for i in range(points):
+        val = int((math.sin((i+1) * math.pi / 50) + 1) * 90)
+        data.append(val)
+    return data
+
+# -------------------------------
+# 波形操作函数
+def do_dynamic_wave():
+    def _task():
+        with wave_operation_lock:
+            print("动态波形开始...")
+            HMI_Wave_Clear()
+            sin_data = generate_sin_wave()
+            for val in sin_data:
+                HMI_Wave(val)
+            print("动态波形完成")
+    threading.Thread(target=_task, daemon=True).start()
+
+def do_static_wave():
+    def _task():
+        with wave_operation_lock:
+            print("静态波形开始...")
+            HMI_Wave_Clear()
+            sin_data = generate_sin_wave()
+            HMI_Wave_Fast(len(sin_data), sin_data)
+            print("静态波形完成")
+    threading.Thread(target=_task, daemon=True).start()
+
+def do_clear_wave():
+    def _task():
+        with wave_operation_lock:
+            print("清空波形...")
+            HMI_Wave_Clear()
+            print("清空完成")
+    threading.Thread(target=_task, daemon=True).start()
+
+# -------------------------------
+# page4 按键文本操作
+def do_page4_ctrl4():
+    HMI_SetText("t4.txt", "当前内阻")
+
+def do_page4_ctrl5():
+    HMI_SetText("t5.txt", "转移阻抗")
+
+# -------------------------------
+# page4 自动更新（由 page0 健康度评估按下触发）
+def do_page4_auto_update():
+    with wave_operation_lock:
+        print("Page4 自动更新开始...")
+        HMI_SetText("page4.t2.txt", "6000")
+        HMI_SetText("page4.t3.txt", "5100")
+        send_command("page4.t8.pco=65504")   # t7 黄色
+        send_command("page4.t13.pco=63488")   # t8 红色
+        send_command("page4.t15.pco=2016")   # t12 绿色
+        print("Page4 自动更新完成")
+
+# -------------------------------
+# page4 字体颜色重置（b5按下）
+def do_page4_reset_color():
+    with wave_operation_lock:
+        print("Page4 字体颜色重置为黑色")
+        for ctrl in ["t4", "t5", "t7", "t8", "t12", "t6", "t15", "t11", "t9", "t13", "t14"]:
+            send_command(f"page4.{ctrl}.pco=0")
+
+# -------------------------------
+# 按键动作映射
+key_actions = {
+    (2, 2): do_dynamic_wave,
+    (2, 3): do_static_wave,
+    (2, 5): do_clear_wave,
+    (3, 2): do_dynamic_wave,
+    (3, 3): do_static_wave,
+    (3, 5): do_clear_wave,
+    (4, 4): do_page4_ctrl4,
+    (4, 5): do_page4_reset_color,  # b5按下时重置颜色
+}
+
+ctrl_names = {
+    (0, 1): "电池类型设定",
+    (0, 2): "尼奎斯特图",
+    (0, 3): "波特图",
+    (0, 4): "健康度评估",
+    (1, 1): "电池节数",
+    (1, 2): "电池容量",
+    (1, 5): "电池品牌",
+    (1, 6): "电池新旧",
+    (2, 2): "add",
+    (2, 3): "addt",
+    (2, 5): "清空",
+    (3, 2): "add",
+    (3, 3): "addt",
+    (3, 5): "清空",
+    (4, 4): "当前内阻",
+    (4, 5): "重置颜色",
+}
+
+# -------------------------------
+# 数据解析
+def parse_data(data_bytes):
+    if not data_bytes:
+        return "<empty>"
+    val_str = None
+    if len(data_bytes) == 1:
+        val = data_bytes[0]
+        val_str = f"val={val}"
+    elif len(data_bytes) == 2:
+        val = data_bytes[0] + (data_bytes[1] << 8)
+        val_str = f"val={val}"
+    elif len(data_bytes) == 4:
+        val = data_bytes[0] + (data_bytes[1] << 8) + (data_bytes[2] << 16) + (data_bytes[3] << 24)
+        val_str = f"val={val}"
+    filtered = bytearray()
+    for b in data_bytes:
+        if 32 <= b <= 126 or b >= 0x80:
+            filtered.append(b)
+    try:
+        txt = filtered.decode('utf-8', errors='replace').strip()
+        if txt and not all(c in '\r\n\t\x00' for c in txt):
+            txt_str = f"txt='{txt}'"
+        else:
+            txt_str = None
+    except:
+        txt_str = None
+    if val_str and txt_str:
+        return f"{val_str} / {txt_str}"
+    elif val_str:
+        return val_str
+    elif txt_str:
+        return txt_str
+    else:
+        hex_str = ' '.join(f'{b:02X}' for b in data_bytes)
+        return f"hex={hex_str}"
+
+# -------------------------------
+# 帧解析
+def parse_frame(frame, data_bytes):
+    page = frame[1]
+    ctrl = frame[2]
+    event = frame[3]
+    event_str = "Pressed" if event == 0x01 else "Released"
+    data_info = parse_data(data_bytes)
+
+    key = (page, ctrl)
+    friendly_name = ctrl_names.get(key, f"Ctrl_{ctrl}")
+
+    print(f"Frame: {' '.join(f'{b:02X}' for b in frame)} | Page={page} | {friendly_name} | Event={event_str} | {data_info}")
+
+    # Page0 健康度评估按下触发 Page4 自动更新
+    if page == 0 and ctrl == 4 and event == 0x00:
+        print("检测到健康度评估按键按下，触发 Page4 自动更新")
+        threading.Thread(target=do_page4_auto_update, daemon=True).start()
+
+    # 原来的按键动作触发
+    if event == 0x01:
+        if key in key_actions:
+            key_actions[key]()
+
+    if page == 4 and ctrl == 3 and event == 0x00:
+        print("检测到返回按键按下，触发 Page4 自动重置")
+        threading.Thread(target=do_page4_reset_color, daemon=True).start()
+
+# -------------------------------
+# 串口读取
+def read_serial():
+    global frame_buffer, data_buffer, waiting_frame, last_frame_time
+    print("开始读取串口数据...按 Ctrl+C 退出")
+    while True:
+        try:
+            if ser.in_waiting > 0:
+                data = ser.read(ser.in_waiting)
+                for b in data:
+                    if b == 0x65:
+                        if waiting_frame is not None:
+                            parse_frame(waiting_frame, data_buffer)
+                            waiting_frame = None
+                            data_buffer = bytearray()
+                            last_frame_time = None
+                        frame_buffer = [b]
+                    elif len(frame_buffer) > 0:
+                        frame_buffer.append(b)
+                        if len(frame_buffer) == KEY_FRAME_LEN:
+                            if waiting_frame is not None:
+                                parse_frame(waiting_frame, data_buffer)
+                            waiting_frame = frame_buffer.copy()
+                            frame_buffer = []
+                            data_buffer = bytearray()
+                            last_frame_time = time.time()
+                    else:
+                        if waiting_frame is not None:
+                            data_buffer.append(b)
+
+                    if waiting_frame is not None:
+                        if data_buffer.endswith(b'\xFF\xFF\xFF') or data_buffer.endswith(b'\r\n'):
+                            if data_buffer.endswith(b'\xFF\xFF\xFF'):
+                                data_bytes = data_buffer[:-3]
+                            else:
+                                data_bytes = data_buffer[:-2]
+                            parse_frame(waiting_frame, data_bytes)
+                            waiting_frame = None
+                            data_buffer = bytearray()
+                            last_frame_time = None
+
+            if waiting_frame is not None and last_frame_time is not None:
+                if time.time() - last_frame_time > WAIT_TXT_TIMEOUT:
+                    parse_frame(waiting_frame, data_buffer)
+                    waiting_frame = None
+                    data_buffer = bytearray()
+                    last_frame_time = None
+
+            time.sleep(0.002)
+
+        except KeyboardInterrupt:
+            ser.close()
+            print("\n串口关闭，程序退出")
+            break
+        except Exception as e:
+            ser.close()
+            print("\n串口读取错误:", e)
+            break
+
+# -------------------------------
+if __name__ == "__main__":
+    read_serial()

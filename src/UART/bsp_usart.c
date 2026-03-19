@@ -203,7 +203,11 @@ fsp_err_t BSP_Serial_Read(bsp_com_id_e com_id, uint8_t * p_data, uint32_t len)
         }
         else
         {
-             if (UART_EVENT_RX_COMPLETE != p_ctrl->last_event) err = FSP_ERR_ABORTED;
+             if ((UART_EVENT_RX_COMPLETE != p_ctrl->last_event) &&
+                 !((1U == len) && (UART_EVENT_RX_CHAR == p_ctrl->last_event)))
+             {
+                 err = FSP_ERR_ABORTED;
+             }
         }
     }
 

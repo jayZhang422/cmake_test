@@ -11,7 +11,7 @@ extern "C" {
                 {
                     // Run_eis_uart_verify_server();
                     BSP_Serial_Init(COM_DEBUG) ;
-                     Run_phase2_test() ;
+                    //  Run_phase2_test() ;
                         
                     while (1)
                     {
