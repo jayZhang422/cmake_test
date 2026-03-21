@@ -57,6 +57,12 @@ namespace AppHmi {
         INFERIOR   // 劣质 (t15) 
     };
 
+    enum class BrandDetecet {
+        Tattu,//格氏
+        Infinity,//花牌
+        BosLi,//博世
+    };
+
     // ==========================================
     // 5. 对外暴露的 API
     // ==========================================
@@ -70,6 +76,7 @@ namespace AppHmi {
     void Update_InternalResistance(float value, MeasureState state);
     void Update_TransferImpedance(float value, MeasureState state);
     void Update_HealthStatus(HealthLevel level);
+    BrandDetecet GetBrand(void);
 }
 
 #endif // APP_HMI_LOGIC_HPP

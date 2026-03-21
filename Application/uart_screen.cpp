@@ -1,6 +1,7 @@
 #include "uart_screen.hpp"
 #include "bsp_tjc_hmi.hpp" // 引入我们刚刚写的底层纯驱动
 #include <cstdio>
+#include <cstring>
 
 namespace AppHmi {
 
@@ -83,13 +84,28 @@ namespace AppHmi {
         }
     }
 
+   static BrandDetecet g_brand  = BrandDetecet::Tattu;
 
     static void String_Callback(const char* str) {
-        // 目前不加业务，可以留空。
-        // 或者加一句打印，方便你在串口调试助手里看：
-        // printf("收到字符串报文: %s\r\n", str);
+        if (strcmp(str, "Tattu") == 0)
+        {
+            g_brand =BrandDetecet::Tattu ;
+        }
+        else if (strcmp(str, "Infinity") == 0) 
+        {
+            g_brand = BrandDetecet::Infinity ;
+        }
+        else if (strcmp(str, "BosLi-po") == 0)
+        {
+            g_brand = BrandDetecet::BosLi ;
+        }
     }
     
+    BrandDetecet GetBrand(void)
+    {
+        return  g_brand;
+    }
+
     // ==========================================
     // 暴露的初始化接口
     // ==========================================
