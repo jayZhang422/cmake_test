@@ -7,12 +7,9 @@
 /* 实例化对象 (静态，隐藏在当前文件) */
 static AT24C02 eeprom;
 
-/* 简单的伪随机数生成器 (替代 rand 避免 malloc 问题) */
-static uint32_t g_seed = 987654321;
-static uint32_t my_rand(void) {
-    g_seed = g_seed * 1103515245 + 12345;
-    return (uint32_t)(g_seed / 65536) % 32768;
-}
+
+
+
 
 void EEPROMAppTest(void) {
     BSP_Printf(COM_DEBUG, "[App] EEPROM Mini Test Start...\r\n");

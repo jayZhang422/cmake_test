@@ -2,9 +2,15 @@
 #include "bsp_tjc_hmi.hpp" // 引入我们刚刚写的底层纯驱动
 #include <cstdio>
 #include <cstring>
+#include <stdint.h>
 
 namespace AppHmi {
 
+    static int32_t g_cells = 0;     // 保存电池节数
+    static int32_t g_capacity = 0;  // 保存电池容量
+    static uint8_t g_active_page  = 0;
+    static BrandDetecet g_brand  = BrandDetecet::Tattu;
+    static CruveStatus g_is_curveDrawing = CruveStatus::CLEAR;
     // ==========================================
     // 内部辅助函数：重置高亮颜色为灰色
     // ==========================================
@@ -54,38 +60,53 @@ namespace AppHmi {
     // Page 1 事件处理 (读取为主) 
     // ==========================================
     static void Handle_Page1(uint8_t cmp, uint8_t event) {
-        if (event != 0x01) return; 
+        (void) cmp;
+        (void) event;
+        
+    }
+
+    static void Handle_Page4(uint8_t cmp, uint8_t event) {
+       if (event != 0x00) return; 
 
         switch (cmp) {
-            case CmpId::P1_BTN_BRAND:
-                // 触发：读取电池品牌 (花牌，格氏，博世) 
-                break;
-            case CmpId::P1_NUM_CELLS:
-                // 触发：读取节数 
-                break;
-            case CmpId::P1_NUM_CAPACITY:
-                // 触发：读取容量 
+            case 3: 
+                Reset_Page4_Colors(); // 离开前，把所有高亮颜色重置为灰色
                 break;
             default: break;
         }
+        
     }
 
     // ==========================================
     // 核心事件路由总线 (挂载到底层驱动的回调)
     // ==========================================
     static void Router_Callback(uint8_t page, uint8_t cmp, uint8_t event) {
+        if (g_active_page != page) 
+        {
+            g_is_curveDrawing = CruveStatus::CLEAR; 
+        }
+        g_active_page = page ;
         switch (page) {
             case PAGE_0_HOME:    Handle_Page0(cmp, event); break;
             case PAGE_1_SETTING: Handle_Page1(cmp, event); break;
             case PAGE_2_NYQUIST: /* 处理 page2 动作 */ break;
             case PAGE_3_BODE:    /* 处理 page3 动作 */ break;
-            case PAGE_4_RESULT:  /* 处理 page4 返回动作等 */ break;
+            case PAGE_4_RESULT:  Handle_Page4(cmp, event); break;
             default: break;
         }
     }
 
-   static BrandDetecet g_brand  = BrandDetecet::Tattu;
-
+    static void Number_Callback(int32_t val) {
+        if (val < 100) {
+            g_cells = val;
+            
+        } else {
+            g_capacity = val;
+            
+        }
+    }
+  
+  
     static void String_Callback(const char* str) {
         if (strcmp(str, "Tattu") == 0)
         {
@@ -99,13 +120,40 @@ namespace AppHmi {
         {
             g_brand = BrandDetecet::BosLi ;
         }
+        else if(strcmp(str,"4") ==0 )
+        {
+            g_is_curveDrawing = CruveStatus::DYNAMIC; //动态
+        }
+        else if(strcmp(str,"5") ==0 )
+        {
+            g_is_curveDrawing = CruveStatus::STILL; //静态
+        }
+        else if(strcmp(str,"6") == 0)
+        {
+            g_is_curveDrawing = CruveStatus::CLEAR; //清空
+        }
     }
-    
+    CruveStatus GetCurveStatus (void)
+    {
+        return g_is_curveDrawing ;
+    }
     BrandDetecet GetBrand(void)
     {
         return  g_brand;
     }
+    int32_t GetCells(void) 
+    {
+        return g_cells;
+    }
 
+    int32_t GetCapacity(void) 
+    {
+        return g_capacity;
+    }
+    uint8_t GetCurrentPage(void)
+    {
+        return g_active_page ;
+    }
     // ==========================================
     // 暴露的初始化接口
     // ==========================================
@@ -113,14 +161,20 @@ namespace AppHmi {
         // 将路由函数注册到底层监控平台
         TjcHmi::SetRxCallback(Router_Callback);
         TjcHmi::SetStringCallback(String_Callback);
+        TjcHmi::SetNumberCallback(Number_Callback);
     }
 
     // ==========================================
     // 暴露的业务下发接口 (Page 4) 
     // ==========================================
-    void Update_InternalResistance(float value, MeasureState state) {
-        // 1. 写数值 (t2) 
-        TjcHmi::SendCmd("page4.t2.txt=\"%.2f mR\"", value);
+void Update_InternalResistance(float value, MeasureState state) {
+        // 1. 将浮点数拆分为整数和小数部分 (放大100倍取两位小数)
+        int int_part = (int)value; 
+        int dec_part = (int)((value - int_part) * 100.0f); 
+        if(dec_part < 0) dec_part = -dec_part; // 防止出现 30.-25 的负数异常
+
+        // 用 %d.%02d 替代 %.2f 发送
+        TjcHmi::SendCmd("page4.t2.txt=\"%d.%02d mR\"", int_part, dec_part);
         
         // 2. 更新高亮状态 (t14偏小, t13正常, t12偏大) 
         TjcHmi::SendCmd("page4.t14.pco=%u", state == MeasureState::LOW ? COLOR_YELLOW : COLOR_GRAY);
@@ -129,8 +183,13 @@ namespace AppHmi {
     }
 
     void Update_TransferImpedance(float value, MeasureState state) {
-        // 1. 写数值 (t3) 
-        TjcHmi::SendCmd("page4.t3.txt=\"%.2f mR\"", value);
+        // 1. 将浮点数拆分为整数和小数部分
+        int int_part = (int)value; 
+        int dec_part = (int)((value - int_part) * 100.0f); 
+        if(dec_part < 0) dec_part = -dec_part;
+
+        // 用 %d.%02d 替代 %.2f 发送
+        TjcHmi::SendCmd("page4.t3.txt=\"%d.%02d mR\"", int_part, dec_part);
         
         // 2. 更新高亮状态 (t11偏小, t9正常, t8偏大) 
         TjcHmi::SendCmd("page4.t11.pco=%u", state == MeasureState::LOW ? COLOR_YELLOW : COLOR_GRAY);
@@ -146,5 +205,14 @@ namespace AppHmi {
         TjcHmi::SendCmd("page4.t4.pco=%u",  level == HealthLevel::POOR      ? COLOR_RED    : COLOR_GRAY);
         TjcHmi::SendCmd("page4.t15.pco=%u", level == HealthLevel::INFERIOR  ? COLOR_RED    : COLOR_GRAY);
     }
+  
+    void Clear_Curve(uint8_t curve_id, uint8_t channel) {
+        TjcHmi::SendCmd("cle %u,%u", curve_id, channel);
+    }
 
+    // 2. 动态画一个点 (val 必须是 0~255 之间的整数)
+    void Add_Curve_Point(uint8_t curve_id, uint8_t channel, uint8_t val) {
+        TjcHmi::SendCmd("add %u,%u,%u", curve_id, channel, val);
+    }
+     
 }

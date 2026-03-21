@@ -10,6 +10,7 @@
 #define UART_TX_TIMEOUT_TICKS   (1000)      /* 发送超时: 1秒 */
 #define UART_RX_TIMEOUT_TICKS   (2000)      /* 接收超时: 2秒 (防止永久卡死) */
 #define PRINTF_BUF_SIZE         (128)
+#define UART_RX_RING_SIZE       (256U)
 
 /* ============================================================== */
 /* 内部结构体定义 (保持不变)                                       */
@@ -30,6 +31,10 @@ typedef struct
     bsp_uart_user_cb_t p_user_cb;
     volatile uart_event_t last_event;
     char                    print_buf[PRINTF_BUF_SIZE];
+    volatile uint16_t       rx_head;
+    volatile uint16_t       rx_tail;
+    volatile uint32_t       rx_overflow_cnt;
+    uint8_t                 rx_ring[UART_RX_RING_SIZE];
 } bsp_uart_runtime_ctrl_t;
 
 /* ============================================================== */
@@ -92,6 +97,9 @@ void BSP_Serial_Init(bsp_com_id_e com_id)
     
     tx_semaphore_create(&p_ctrl->tx_sema, "UART_TX_S", 0);
     tx_semaphore_create(&p_ctrl->rx_sema, "UART_RX_S", 0);
+    p_ctrl->rx_head = 0U;
+    p_ctrl->rx_tail = 0U;
+    p_ctrl->rx_overflow_cnt = 0U;
 
     p_cfg->p_hal_instance->p_api->open(p_cfg->p_hal_instance->p_ctrl, 
                                        p_cfg->p_hal_instance->p_cfg);
@@ -215,6 +223,31 @@ fsp_err_t BSP_Serial_Read(bsp_com_id_e com_id, uint8_t * p_data, uint32_t len)
     return err;
 }
 
+fsp_err_t BSP_Serial_ReadByteTry(bsp_com_id_e com_id, uint8_t * p_data)
+{
+    if ((com_id >= COM_NUM_MAX) || (NULL == p_data))
+    {
+        return FSP_ERR_INVALID_ARGUMENT;
+    }
+    if (!g_uart_run_ctrl[com_id].is_init)
+    {
+        return FSP_ERR_NOT_OPEN;
+    }
+
+    bsp_uart_runtime_ctrl_t *p_ctrl = &g_uart_run_ctrl[com_id];
+    uint16_t tail = p_ctrl->rx_tail;
+
+    /* 单生产者(ISR) + 单消费者(线程)环形缓冲，空则立即返回。 */
+    if (tail == p_ctrl->rx_head)
+    {
+        return FSP_ERR_TIMEOUT;
+    }
+
+    *p_data = p_ctrl->rx_ring[tail];
+    p_ctrl->rx_tail = (uint16_t)((tail + 1U) % UART_RX_RING_SIZE);
+    return FSP_SUCCESS;
+}
+
 /* ============================================================== */
 /* 通用中断服务函数 (保持不变)                                     */
 /* ============================================================== */
@@ -224,6 +257,22 @@ void usart_common_callback(uart_callback_args_t * p_args)
     if (NULL == p_ctrl) return;
 
     p_ctrl->last_event = p_args->event;
+
+    if (UART_EVENT_RX_CHAR == p_args->event)
+    {
+        uint16_t head = p_ctrl->rx_head;
+        uint16_t next = (uint16_t)((head + 1U) % UART_RX_RING_SIZE);
+
+        if (next != p_ctrl->rx_tail)
+        {
+            p_ctrl->rx_ring[head] = (uint8_t) p_args->data;
+            p_ctrl->rx_head = next;
+        }
+        else
+        {
+            p_ctrl->rx_overflow_cnt++;
+        }
+    }
 
     if (UART_EVENT_TX_COMPLETE == p_args->event)
     {

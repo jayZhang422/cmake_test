@@ -52,8 +52,9 @@ namespace TjcHmi {
 
         // 在 bsp_tjc_hmi.hpp 的接收解析机制区域添加：
         typedef void (*StringEventCb_t)(const char* str);
+        typedef void (*NumEventCb_t)(int32_t val);
         void SetStringCallback(StringEventCb_t cb);
-
+        void SetNumberCallback(NumEventCb_t cb);
     /**
      * @brief 注册接收回调函数，将解析结果抛给应用层处理
      */

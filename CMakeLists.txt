@@ -61,6 +61,8 @@ file(GLOB_RECURSE USER_SOURCES
     "Application/*.cpp"
     "Application/*.c"
     "Driver/*.cpp"
+    "User_app/*.cpp"
+    "User_app/*.c"
    
    
 ) 
@@ -87,6 +89,7 @@ target_include_directories(${PROJECT_NAME}.elf PRIVATE
     "ra/arm/CMSIS-DSP/Include"
     "Algorithm"
     "src/DAC"
+    "User_app"
     
 
    

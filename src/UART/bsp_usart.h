@@ -50,6 +50,12 @@ fsp_err_t BSP_Serial_Send(bsp_com_id_e com_id, uint8_t * p_data, uint32_t len);
 fsp_err_t BSP_Serial_Read(bsp_com_id_e com_id, uint8_t * p_data, uint32_t len);
 
 /**
+ * @brief 非阻塞读取 1 字节
+ * @note  从 ISR 填充的环形缓冲区取数据；若无数据立即返回 FSP_ERR_TIMEOUT
+ */
+fsp_err_t BSP_Serial_ReadByteTry(bsp_com_id_e com_id, uint8_t * p_data);
+
+/**
  * @brief 格式化打印 (类似 printf)
  * @note  1. 线程安全 (支持多线程并发调用)
  * 2. 内部使用栈 buffer (256字节)，请确保线程栈足够大

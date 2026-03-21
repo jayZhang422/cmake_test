@@ -2,7 +2,8 @@
 #define APP_HMI_LOGIC_HPP
 
 #include <stdint.h>
-
+#include <stddef.h>   
+#include "bsp_tjc_hmi.hpp"
 namespace AppHmi {
 
     // ==========================================
@@ -25,10 +26,9 @@ namespace AppHmi {
         constexpr uint8_t P0_BTN_BODE      = 3; // b2
         constexpr uint8_t P0_BTN_HEALTH    = 4; // b3
 
-        // Page 1 控件 ID 
-        constexpr uint8_t P1_BTN_BRAND     = 1; // b1
-        constexpr uint8_t P1_NUM_CELLS     = 2; // n0
-        constexpr uint8_t P1_NUM_CAPACITY  = 3; // n1
+        constexpr uint8_t P1_BTN_BRAND     = 5; // b1 (品牌按钮，ID为5)
+        constexpr uint8_t P1_NUM_CELLS     = 1; // n0 (节数，ID为1)
+        constexpr uint8_t P1_NUM_CAPACITY  = 2; // n1 (容量，ID为2)
     }
 
     // ==========================================
@@ -63,6 +63,12 @@ namespace AppHmi {
         BosLi,//博世
     };
 
+    enum class CruveStatus {
+        STILL,
+        DYNAMIC,
+        CLEAR,
+     };
+
     // ==========================================
     // 5. 对外暴露的 API
     // ==========================================
@@ -77,6 +83,40 @@ namespace AppHmi {
     void Update_TransferImpedance(float value, MeasureState state);
     void Update_HealthStatus(HealthLevel level);
     BrandDetecet GetBrand(void);
+    int32_t GetCells(void);
+    int32_t GetCapacity(void);
+    uint8_t GetCurrentPage(void);
+    CruveStatus GetCurveStatus (void);
+    void Clear_Curve(uint8_t curve_id, uint8_t channel);
+    void Add_Curve_Point(uint8_t curve_id, uint8_t channel, uint8_t val);
+    template <size_t N>
+    void Fast_Send_Float_Array(uint8_t curve_id, uint8_t channel, const float (&data)[N]) {
+        if (N == 0) return;
+        float min_v, max_v;
+        size_t i;
+        if (N % 2 != 0) { min_v = max_v = data[0]; i = 1; }
+        else {
+            if (data[0] < data[1]) { min_v = data[0]; max_v = data[1]; }
+            else { min_v = data[1]; max_v = data[0]; }
+            i = 2;
+        }
+        while (i < N) {
+            float l_min, l_max;
+            if (data[i] < data[i+1]) { l_min = data[i]; l_max = data[i+1]; }
+            else { l_min = data[i+1]; l_max = data[i]; }
+            if (l_min < min_v) min_v = l_min;
+            if (l_max > max_v) max_v = l_max;
+            i += 2;
+        }
+        float range = max_v - min_v;
+        static uint8_t raw[1024];
+        size_t pts = (N > 1024) ? 1024 : N;
+        for (size_t j = 0; j < pts; ++j) {
+            raw[j] = (range > 0.0001f) ? (uint8_t)((data[j] - min_v) / range * 255.0f) : 128;
+        }
+        TjcHmi::SendCmd("addt %u,%u,%u", curve_id, channel, (uint16_t)pts);
+        TjcHmi::SendRawData(raw, (uint16_t)pts);
+    }
 }
 
 #endif // APP_HMI_LOGIC_HPP

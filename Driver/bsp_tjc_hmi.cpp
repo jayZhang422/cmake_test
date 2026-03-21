@@ -19,7 +19,7 @@ namespace TjcHmi {
     // 回调函数全局指针
     static RxEventCb_t  g_rx_cb = nullptr;
     static StringEventCb_t g_str_cb = nullptr;
-
+    static NumEventCb_t    g_num_cb =nullptr;
 
     static const uint8_t g_end_frame[3] = {0xFF, 0xFF, 0xFF};
 
@@ -99,6 +99,10 @@ namespace TjcHmi {
     g_str_cb = cb;
     }
 
+    void SetNumberCallback(NumEventCb_t cb)
+    {
+        g_num_cb = cb ;
+    }
    void RxTaskLoop(void) {
     if (!g_is_init) return;
 
@@ -106,49 +110,63 @@ namespace TjcHmi {
     static uint8_t state = 0;
     static uint8_t frame[7];
     static uint8_t ff_count = 0;
-    
-    // 新增：专门存字符串的罐子
-    static char str_buf[32];
-    static uint8_t str_idx = 0;
 
-    if (FSP_SUCCESS == BSP_Serial_Read(g_uart_port, &rx_byte, 1)) {
+    // 新增：专门接 0D 0A 结尾的数据（能接字符串，也能接刚才的数字）
+    static uint8_t raw_buf[32];
+    static uint8_t raw_idx = 0;
+    uint16_t budget = 64U;
+
+    // 时序敏感逻辑：单次循环限制处理量，防止接收突发时长时间占用线程。
+    while ((budget-- > 0U) && (FSP_SUCCESS == BSP_Serial_ReadByteTry(g_uart_port, &rx_byte))) {
         if (state == 0) {
             if (rx_byte == 0x65) {
-                // 1. 发现按键动作帧头
+                // 1. 发现触摸按键帧头 0x65
                 frame[0] = rx_byte;
                 state = 1;
                 ff_count = 0;
+                raw_idx = 0; // 清空杂乱数据
             } 
-            else if (rx_byte >= 0x20 && rx_byte <= 0x7E) {
-                // 2. 发现英文字母/数字等可见字符，存入字符串罐子
-                if (str_idx < sizeof(str_buf) - 1) {
-                    str_buf[str_idx++] = (char)rx_byte;
+            else {
+                // 2. 不是 0x65，通通放进缓冲罐子观察
+                if (raw_idx < sizeof(raw_buf)) {
+                    raw_buf[raw_idx++] = rx_byte;
                 }
-            } 
-            else if (rx_byte == 0x0A || rx_byte == 0x0D) {
-                // 3. 发现回车换行符 (0D 0A)，说明屏幕发完了一个完整的词！
-                if (str_idx > 0) {
-                    str_buf[str_idx] = '\0'; // 加上C语言字符串结束符
-                    // 触发字符串回调！
-                    if (g_str_cb) g_str_cb(str_buf); 
-                    str_idx = 0; // 清空罐子，准备接下一个词
+
+                // 3. 检查是不是以 0D 0A 结尾了？
+                if (raw_idx >= 2 && raw_buf[raw_idx - 2] == 0x0D && raw_buf[raw_idx - 1] == 0x0A) {
+                    
+                    // 情况A：刚好收到了 4 个字节 (比如 78 05 0D 0A)，这就是你刚才测出来的数字！
+                    if (raw_idx == 4) {
+                        int32_t val = raw_buf[0] | (raw_buf[1] << 8); // 小端模式还原成整数
+                        if (g_num_cb) g_num_cb(val); // 报告给业务层
+                    }
+                    // 情况B：长度大于 4 个字节，说明是屏幕发来的品牌英文字符串 (比如 Tattu\r\n)
+                    else if (raw_idx > 2) {
+                        raw_buf[raw_idx - 2] = '\0'; // 抹掉 0D 0A，变成 C 语言字符串
+                        if (g_str_cb) g_str_cb((char*)raw_buf); // 报告给业务层
+                    }
+
+                    raw_idx = 0; // 处理完，清空罐子接下一个
                 }
             }
         }
         else {
-            // 这里保留你原来处理 state 1 到 6 的 0x65 协议代码
+            // 这里保留原有的 0x65 触摸协议解析代码
             switch(state) {
                 case 1: case 2: case 3:
-                    frame[state] = rx_byte; state++; break;
+                    frame[state] = rx_byte;
+                    state++;
+                    break;
                 case 4: case 5: case 6:
                     if (rx_byte == 0xFF) {
                         ff_count++;
                         if (ff_count == 3) {
-                           if (g_rx_cb) g_rx_cb(frame[1], frame[2], frame[3]);
+                            if (g_rx_cb) g_rx_cb(frame[1], frame[2], frame[3]);
                             state = 0; 
-                        } else { state++; }
+                        }
                     } else { state = 0; }
                     break;
+                default: state = 0; break;
             }
         }
     }
