@@ -180,7 +180,6 @@ public:
 
         // 输入兜底：阻断 NaN/Inf 和非法 Vref，避免异常值传播到 DAC。
         if (!std::isfinite(center_voltage_mv)) {
-        if (!std::isfinite(center_voltage_mv)) {
             center_voltage_mv = safe_center_mv;
         }
         if (!std::isfinite(peak_amplitude_mv)) {
@@ -195,7 +194,6 @@ public:
         float amplitude_dac = (peak_amplitude_mv / vref_mv) * max_dac_val;
 
         // 二次兜底：处理极端输入导致的中间非有限值。
-        if (!std::isfinite(offset_dac)) {
         if (!std::isfinite(offset_dac)) {
             offset_dac = (safe_center_mv / safe_vref_mv) * max_dac_val;
         }
