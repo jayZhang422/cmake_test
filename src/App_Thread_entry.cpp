@@ -15,19 +15,20 @@ extern volatile bool g_is_signal_stable;
                 {
                    
                      BSP_Serial_Init(COM_DEBUG) ;
-                     EIS::DataPipeline::Init();
+                     // EIS::DataPipeline::Init();
                      
                      // UpdateDacWaveParameters(1.65f, 1.0f);
                      UpdateDacWaveParameters(0.1f, 0.05f);
-                     DAC_SingleSignal_131();
-                     while (g_is_signal_stable)
-                  {
-                     tx_thread_sleep(1);
-                  }
+                     // DAC_SingleSignal_131();
+                     DAC_SingleSignal();
+                  //    while (g_is_signal_stable)
+                  // {
+                  //    tx_thread_sleep(1);
+                  // }
 
        
-                  BSP_Timer_Stop(BSP_TIMER_OVERFLOW);
-                  AppPrint::PrintLog(">>> [控制线程] 测量结束，硬件已安全关闭。");  
+                  // BSP_Timer_Stop(BSP_TIMER_OVERFLOW);
+                  // AppPrint::PrintLog(">>> [控制线程] 测量结束，硬件已安全关闭。");  
                     while (1)
                     {
                      

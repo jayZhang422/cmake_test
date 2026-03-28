@@ -42,13 +42,13 @@ void BSP_ADC_Init(bsp_adc_id_e id)
     tx_semaphore_create(&p_ctrl->scan_sema, "ADC_SEMA", 0);
     tx_mutex_create(&p_ctrl->adc_mutex, "ADC_MUTEX", TX_INHERIT);
 
-    /* 1. 打开 ADC */
+    
     p_cfg->p_hal_instance->p_api->open(p_cfg->p_hal_instance->p_ctrl, p_cfg->p_hal_instance->p_cfg);
 
-    /* 2. 配置通道 (RASC生成的代码通常已包含，这里再次确保配置) */
+    
     p_cfg->p_hal_instance->p_api->scanCfg(p_cfg->p_hal_instance->p_ctrl, p_cfg->p_hal_instance->p_channel_cfg);
 
-    /* 3. 注入 Context 并设置回调 */
+    /*  注入 Context 并设置回调 */
     p_cfg->p_hal_instance->p_api->callbackSet(
         p_cfg->p_hal_instance->p_ctrl, 
         bsp_common_adc, 
@@ -59,9 +59,7 @@ void BSP_ADC_Init(bsp_adc_id_e id)
     p_ctrl->is_init = true;
 }
 
-/* * 启动 ADC 扫描 
- * 如果配置了 DMA，这里 Start 后，硬件会自动触发 DMA
- */
+
 fsp_err_t BSP_ADC_ScanStart(bsp_adc_id_e id)
 {
     if(id >= BSP_ADC_NUM) return FSP_ERR_INVALID_ARGUMENT;

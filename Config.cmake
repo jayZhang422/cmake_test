@@ -15,7 +15,7 @@ if(CURRENT_PC_NAME STREQUAL "MSI")
 
 elseif(CURRENT_PC_NAME STREQUAL "PC-20260313EOXE")
     # 电脑 B: 使用 D 盘路径
-    set(RASC_EXE_PATH "D:/Renesas/RA/sc_v2025-12_fsp_v6.3.0/eclipse/rasc.exe")
+    set(RASC_EXE_PATH "D:/Renesas/rasc/eclipse/rasc.exe")
     message(STATUS "✅ 已匹配 PC-20260313EOXE,设置 RASC 路径为 D 盘")
 
 else()

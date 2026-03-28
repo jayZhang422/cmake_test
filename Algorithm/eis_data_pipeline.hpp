@@ -4,9 +4,14 @@
 #include <stdbool.h>
 #include "tx_api.h"
  
+
+//ADC 接收核心采用的是 DMA Ping-Pong 双缓冲结合 ThreadX 事件标志 的架构。
+// 这种设计将底层的硬件连续采样与上层的 DSP 算法完美解耦，
+// 保证了 EIS 扫频时数据流的零盲区。同时，利用 RTOS 的事件驱动机制替代轮询，
+// 并在内存层面做了 4 字节强制对齐，最大化了 CPU 的并行处理效率和总线带宽
 namespace EIS {
 
-// 定义每次 DMA 搬运的数据块大小 (需结合扫频管理器的 IntegerCycleOptimizer 动态修改，这里设最大值)
+
 constexpr uint32_t MAX_DMA_BUFFER_SIZE = 2048;
 
 // ThreadX 事件标志位定义

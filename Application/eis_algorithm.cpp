@@ -40,10 +40,10 @@
     // =======================================================
     // [2. 底层驱动辅助函数]
     // =======================================================
-    // 在 eis_algorithm.cpp 中添加
+   
     static void AdcDma_Callback(transfer_callback_args_t * p_args) {
         (void)p_args;
-        // 关键：通知流水线 DMA 搬运已完成，切换 Ping-Pong 状态并唤醒处理线程
+     
         EIS::DataPipeline::NotifyDmaCompleteFromISR(); 
     }
     // 统一的硬件初始化模块，避免重复写代码
@@ -59,7 +59,7 @@
 
     // 动态更新 DAC 输出参数
     void UpdateDacWaveParameters(float new_center_v, float new_amplitude_v) {
-        // 可以在这里加一些安全限制，防止乱填参数把硬件烧了
+       
         if (new_center_v > 3.1f || new_center_v < 0.0f) return;
         if (new_amplitude_v > 1.5f || new_amplitude_v < 0.0f) return;
 
@@ -67,20 +67,18 @@
         g_dac_amplitude_v = new_amplitude_v;
     }
     extern "C" void ADC_Start_Capture_DMA(uint32_t capture_points) {
-        // 1. 停掉接收端 DMA
+        
         BSP_DMAC_Disable(BSP_DMAC_ADC_0); 
         
-        // 2. 重新配置 ADC DMA
-        // 【核心修改】：源地址固定为 CH5 (ADDR5)
+        
         BSP_DMAC_Reconfig(BSP_DMAC_ADC_0, 
-                        BspAnalog::GetAdcReg<0>(5), // <--- 改为 5
+                        BspAnalog::GetAdcReg<0>(5), 
                         (void *)EIS::DataPipeline::GetNextWriteBuffer(), 
                         capture_points);
                         
-        // 3. 使能 DMA，进入待命状态
+        
         BSP_DMAC_Enable(BSP_DMAC_ADC_0);
 
-        // 4. 武装 ADC
         BSP_ADC_ScanStart(BSP_ADC_0); 
     }
     // DAC 波形生成器 (生成一周期存入 g_dac_output_buffer)
@@ -107,7 +105,15 @@
     }
 
     // 计算最优 DMA 周期
+    //扫频（Sweep）时，如果生成的正弦波不是严格的“整数个周期”，首尾拼接时就会出现“相位突变（Phase Jump）”，
+    // 这会导致极大的频谱泄露和高频噪声，直接毁掉阻抗测量的精度。
     static uint32_t Sweep_SelectIntegerCycles(float target_freq_hz, float max_sample_rate_hz) {
+        //没有固定死采样率，而是根据目标频率（target_freq_hz）动态反推。
+        // 计算出在这 200 个点（WAVE_POINTS）的缓冲区里，
+        // 到底塞入几个**完整的周期（cycles_m）**最合适，
+        // 然后重新调整微控制器的底层 Timer 频率（actual_freq_hz）
+        
+        
         float m = ceilf((target_freq_hz * (float) WAVE_POINTS) / max_sample_rate_hz);
         uint32_t cycles = (uint32_t) m;
         if (cycles < 1U) cycles = 1U;
@@ -142,33 +148,27 @@
     extern "C" void DAC_SingleSignal_131(void) {
         HW_Init_Excitation_Path();
         
-        // 设置我们测试内阻的频率参数 (比如 1kHz)
+
         g_current_excitation_freq_hz = 1000.0f; 
         g_current_sample_rate_hz = 100000.0f;
 
-        // 配置 DAC 波形和定时器
+      
         DAC_Waveform(g_current_excitation_freq_hz, g_current_sample_rate_hz);
         BSP_Timer_SetFreq_Hz(BSP_TIMER_OVERFLOW, g_current_sample_rate_hz);
 
-        // ==========================================
-        // 关键修复 1：同时启动 DAC 和 ADC 的 DMA
-        // ==========================================
+      
         BSP_DMAC_Reconfig(BSP_DMAC_DAC, (void const *) g_dac_output_buffer, BspAnalog::GetDacReg(0), 0); // 0 代表无限循环发波
         BSP_DMAC_Enable(BSP_DMAC_DAC);
         
-        ADC_Start_Capture_DMA(WAVE_POINTS); // 启动 ADC 采集！
-
-        // 启动外设联动
+        ADC_Start_Capture_DMA(WAVE_POINTS); 
+       
         BSP_DAC_Start(BSP_DAC_WAVE);
         BSP_ELC_Enable(BSP_ELC);
         BSP_Timer_Start(BSP_TIMER_OVERFLOW);
 
-        // ==========================================
-        // 关键修复 2：通知处理线程开始算阻抗，并取消 while(1)
-        // ==========================================
-        g_is_signal_stable = true; 
         
-        // 退出函数，让屏幕线程继续刷新！底层 DMA 会自动搬数据！
+        g_is_signal_stable = true; 
+   
     }
 
     extern "C" void EIS_DataProcess_Thread_Entry(void) {
@@ -184,21 +184,19 @@
         while (1) {
             const uint16_t* p_raw_data = nullptr;
 
-            // 1. 阻塞等待 DMA 采集完一波数据 
-            // 【注意】：因为是 Normal 模式单通道，此时 p_raw_data 里就是纯粹的 200 个 CH5 原始值
+         
             if (EIS::DataPipeline::WaitForDataBlock(&p_raw_data, TX_WAIT_FOREVER) && p_raw_data) {
                 
                 if (g_is_signal_stable) {
                     
-                    // --- A. 直接处理电池电压通道 (CH5) ---
-                    // 不再需要 for 循环解交织！直接把 p_raw_data 喂给转换器
+                    
                     EIS::DspPreprocess::ConvertRawToVoltage(p_raw_data, s_process_buffer_v, single_channel_len, 3.3f, FIXED_VOLTAGE_GAIN);
                     
-                    // 去除直流偏置，提取纯交流电压纹波
+                    
                     float32_t dc_bias_v = 0.0f;
                     EIS::DspPreprocess::RemoveDcOffset(s_process_buffer_v, single_channel_len, &dc_bias_v);
 
-                    // --- B. 生成参考波并对电压进行单路锁相解调 ---
+                  
                     static float32_t ref_sin[WAVE_POINTS];
                     static float32_t ref_cos[WAVE_POINTS];
                     EIS::EisRefGenerator::Generate(ref_sin, single_channel_len, g_current_excitation_freq_hz, g_current_sample_rate_hz, BSP_ALG_SIN);
@@ -207,30 +205,28 @@
                     float Vr = EIS::DigitalLockIn::Demodulate(s_process_buffer_v, ref_sin, single_channel_len);
                     float Vi = EIS::DigitalLockIn::Demodulate(s_process_buffer_v, ref_cos, single_channel_len);
 
-                    // --- C. 计算电压纹波的有效幅值 |V| ---
+                   
                     float V_mag = 0.0f;
                     arm_sqrt_f32(Vr * Vr + Vi * Vi, &V_mag);
 
-                    // --- D. 基于理论推算内阻 ---
-                    // 你的硬件公式：电流(A) = DAC发波振幅(V) / 2.5
+                    
                     float I_theoretical_peak = g_dac_amplitude_v / 2.5f; 
                     
                     // 内阻 Rs = 电压纹波幅值 / 理论电流峰值
                     float Rs = V_mag / I_theoretical_peak;
 
-                    // --- E. 将结果塞给全局变量供 UI 提取 ---
-                    // 因为只算出了实部 Rs，我们把虚部和相位设为 0
+                    
                     result.R_real = Rs;
                     result.R_imag = 0.0f;
                     result.Magnitude = Rs;
                     result.Phase_deg = 0.0f;
 
-                    // 打印结果看看对不对
+                   
                     AppPrint::PrintFloat(">>> 理论电流峰值 (A)", I_theoretical_peak, "");
                     AppPrint::PrintFloat(">>> 测得电压纹波 (V)", V_mag, "");
                     AppPrint::PrintFloat(">>> 估算电池内阻 Rs (Ohm)", Rs, "");
 
-                    // --- F. 握手放行 ---
+                    
                     g_is_signal_stable = false;
                 }
             }
@@ -255,32 +251,26 @@
             uint32_t sample_rate_hz = (uint32_t)(sample_rate + 0.5f);
             float actual_freq_hz = ((float)sample_rate_hz * (float)cycles_m) / (float)WAVE_POINTS;
             
-            // 1. 彻底销毁上一个 DMA 状态，清空被腰斩的内部计数器 (解决 3/4 波形问题)
+           
             BSP_Timer_Stop(BSP_TIMER_OVERFLOW);
             g_dma_dac.p_api->disable(g_dma_dac.p_ctrl);
             g_dma_dac.p_api->close(g_dma_dac.p_ctrl);
             
-            // 2. 重新计算并生成这 200 个点的完美正弦波
+            
             BSP_Timer_SetFreq_Hz(BSP_TIMER_OVERFLOW, sample_rate_hz);
             DAC_Waveform(actual_freq_hz, (float)sample_rate_hz);
 
-            // 3. 按照出厂状态重新打开 DMA
+            
             g_dma_dac.p_api->open(g_dma_dac.p_ctrl, g_dma_dac.p_cfg);
             
-            // ==========================================
-            // 【最致命的修复】：刚刚就是漏了这一行！
-            // 必须重新把数组地址绑给 DMA，否则它会去读 NULL (0V)
-            // 传入 0U 代表让硬件自动无限循环 (131秒续航)
-            // ==========================================
+           
             BSP_DMAC_Reconfig(BSP_DMAC_DAC, (void const *) g_dac_output_buffer, BspAnalog::GetDacReg(0), 0U);
             
-            // 4. 发射！全自动无缝发波开始
+            
             g_dma_dac.p_api->enable(g_dma_dac.p_ctrl);
             BSP_Timer_Start(BSP_TIMER_OVERFLOW);
 
-            AppPrint::PrintFloat(">>> Scope Test: Playing Freq (Hz)", actual_freq_hz, "");
-
-            // 5. 让 CPU 睡 2 秒。此时 DMA 正在疯狂自动搬运，波形绝对完美无缝隙
+            
             ULONG delay_ticks = (ULONG)((2000ULL * TX_TIMER_TICKS_PER_SECOND) / 1000ULL);
             tx_thread_sleep(delay_ticks);
         }
@@ -298,7 +288,6 @@ extern "C" void DAC_ADC_Loopback_SingleChannel(void) {
     DAC_Waveform(1000.0f, 100000.0f);
     BSP_Timer_SetFreq_Hz(BSP_TIMER_OVERFLOW, 100000.0f);
 
-    // 1. 先配 DMA
     BSP_DMAC_Disable(BSP_DMAC_ADC_0); 
     BSP_DMAC_Reconfig(BSP_DMAC_ADC_0, 
                       BspAnalog::GetAdcReg<0>(5), // 锁定 CH5
@@ -306,20 +295,19 @@ extern "C" void DAC_ADC_Loopback_SingleChannel(void) {
                       WAVE_POINTS);
     BSP_DMAC_Enable(BSP_DMAC_ADC_0);
 
-    // 2. 开启 DAC
     BSP_DAC_Start(BSP_DAC_WAVE);
     BSP_DMAC_Reconfig(BSP_DMAC_DAC, (void const *)g_dac_output_buffer, BspAnalog::GetDacReg(0), 0U); 
     BSP_DMAC_Enable(BSP_DMAC_DAC);
 
-    // 3. 【关键】先武装 ADC，再开定时器
+ 
     BSP_ADC_ScanStart(BSP_ADC_0); 
     BSP_ELC_Enable(BSP_ELC);
     BSP_Timer_Start(BSP_TIMER_OVERFLOW);
 
-    AppPrint::PrintLog(">>> [Loopback] Waiting...");
+    
 
     const uint16_t* p_raw_data = nullptr;
-    // 注意：测试时先屏蔽掉 app2_progress() 线程，防止它抢信号导致死机
+    
     if (EIS::DataPipeline::WaitForDataBlock(&p_raw_data, TX_WAIT_FOREVER)) {
         BSP_Timer_Stop(BSP_TIMER_OVERFLOW);
         for (int i = 0; i < 50; i++) {

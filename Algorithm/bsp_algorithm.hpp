@@ -63,9 +63,10 @@ public:
 
         for (uint32_t i = 0; i < size; i++) {
             buffer[i] = arm_sin_f32(current_phase); // CMSIS-DSP 快速正弦
+           //相位累加生成离散点
             current_phase += phase_inc;
             
-            // 防止相位溢出，保持在 0-2PI (虽非必须但推荐)
+            // 防止相位溢出，保持在 0-2PI 
             if (current_phase >= 2.0f * PI) {
                 current_phase -= 2.0f * PI;
             }
@@ -74,8 +75,9 @@ public:
 };
 
 // ==========================================
-// 2. 核心锁相放大器 (软件解调)
+// 2. 核心锁相放大器 
 // ==========================================
+//微弱信号放大
 class DigitalLockIn {
 public:
     // 计算实部或虚部
@@ -86,7 +88,7 @@ public:
     static float Demodulate(const float* signal, const float* reference, uint32_t length) {
         float32_t dot_product_result;
         
-        // 【核心魔法】利用 ARM DSP 指令集进行极致速度的点乘累加
+       
         // 相当于：sum += signal[i] * reference[i]
         arm_dot_prod_f32(signal, reference, length, &dot_product_result);
 
@@ -227,3 +229,7 @@ public:
 };
 
 }
+
+//C++ 当作 “带有命名空间、模板和权限管理的更好用的 C 语言” 在用。
+// 这种写法在底层保留了 C 语言级别的指针操作和 ARM DSP 硬件加速
+//同时上层也更容易调用api
