@@ -732,7 +732,7 @@
     <context id="rtos.threadx.thread.1874292254">
       <property id="_symbol" value="Screen_Thread"/>
       <property id="rtos.threadx.thread.name" value="Screen_Thread"/>
-      <property id="rtos.threadx.thread.stack" value="2048"/>
+      <property id="rtos.threadx.thread.stack" value="10240"/>
       <property id="rtos.threadx.thread.priority" value="1"/>
       <property id="rtos.threadx.thread.autostart" value="rtos.threadx.thread.autostart.enabled"/>
       <property id="rtos.threadx.thread.timeslice" value="1"/>

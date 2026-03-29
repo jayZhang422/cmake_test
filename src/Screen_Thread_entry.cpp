@@ -11,17 +11,17 @@ static const ULONG g_test_period_ticks = 1000U; /* 1s: TX_TIMER_TICKS_PER_SECOND
 void Screen_Thread_entry(void)
 {
     
-   //  battery.init();
-   //  g_next_test_tick = tx_time_get() + g_test_period_ticks;
+    battery.init();
+    g_next_test_tick = tx_time_get() + g_test_period_ticks;
     while (1)
     {
-      //  TjcHmi::RxTaskLoop() ;
-      //  ULONG now = tx_time_get();
-      //  if ((LONG)(now - g_next_test_tick) >= 0)
-      //  {
-      //   g_next_test_tick += g_test_period_ticks;
-      //   battery.update();
-      //  }
+       TjcHmi::RxTaskLoop() ;
+       ULONG now = tx_time_get();
+       if ((LONG)(now - g_next_test_tick) >= 0)
+       {
+        g_next_test_tick += g_test_period_ticks;
+        battery.update();
+       }
        tx_thread_sleep(10);
     }
 }

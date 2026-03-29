@@ -826,7 +826,7 @@ FSP Configuration
   Thread "Screen_Thread"
     Symbol: Screen_Thread
     Name: Screen_Thread
-    Stack size (bytes): 2048
+    Stack size (bytes): 10240
     Priority: 1
     Auto start: Enabled
     Time slicing interval (ticks): 1

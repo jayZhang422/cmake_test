@@ -4,7 +4,7 @@
 TX_THREAD Screen_Thread;
                 void Screen_Thread_create(void);
                 static void Screen_Thread_func(ULONG thread_input);
-                static uint8_t Screen_Thread_stack[2048] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.Screen_Thread") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
+                static uint8_t Screen_Thread_stack[10240] BSP_PLACE_IN_SECTION(BSP_UNINIT_SECTION_PREFIX ".stack.Screen_Thread") BSP_ALIGN_VARIABLE(BSP_STACK_ALIGNMENT);
                 void tx_startup_err_callback(void * p_instance, void * p_data);
                 void tx_startup_common_init(void);
 extern bool         g_fsp_common_initialized;
@@ -26,7 +26,7 @@ extern bool         g_fsp_common_initialized;
                         Screen_Thread_func,
                         (ULONG) NULL,
                         &Screen_Thread_stack,
-                        2048,
+                        10240,
                         1,
                         1,
                         1,

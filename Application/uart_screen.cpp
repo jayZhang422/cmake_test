@@ -78,7 +78,7 @@ namespace AppHmi {
 
         switch (cmp) {
             case 3: 
-                Reset_Page4_Colors(); // 离开前，把所有高亮颜色重置为灰色
+                // Reset_Page4_Colors(); // 离开前，把所有高亮颜色重置为灰色
                 break;
             default: break;
         }
@@ -91,7 +91,7 @@ namespace AppHmi {
     static void Router_Callback(uint8_t page, uint8_t cmp, uint8_t event) {
         if (g_active_page != page) 
         {
-            g_is_curveDrawing = CruveStatus::CLEAR; 
+            // g_is_curveDrawing = CruveStatus::CLEAR; 
         }
         g_active_page = page ;
         switch (page) {
